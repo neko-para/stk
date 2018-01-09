@@ -220,11 +220,12 @@ void Inst2(int is, int p1, int p2) {
 }
 
 void run() {
-	stk.push_back(0);
+	stk.push_back(0); // EIP
+	stk.push_back(0); // EAX
 	while (stk[0] != cmd.size()) {
 		const Cmd& c = cmd[stk[0]];
-		proctbl[c.cmd](c.p1, c.p2);
 		cerr << stk[0] << endl;
+		proctbl[c.cmd](c.p1, c.p2);
 		++stk[0];
 	}
 }

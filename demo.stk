@@ -1,7 +1,16 @@
 load base.so;
 load io.so;
-base.push 5;
-base.push 3;
+base.call {start};
 base.jmp {end};
-io.out (5+6/3);
+add:
+	base.mov 1, [-2] + [-3];
+	base.ret;
+start:
+	base.push 5;
+	base.push 3;
+	base.call {add};
+	base.pop;
+	base.pop;
+	io.out [1];
+	base.ret;
 end:
