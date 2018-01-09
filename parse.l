@@ -12,9 +12,12 @@
 	yylval = getImm(atoi(yytext));
 	return VALUE;	
 }
-[-+*/%\[\]\(\):;,] {
+[-+*/%\[\]\(\)\{\}:;,] {
 	return *yytext;
 }
 [ \t\n\r]* ;
 %%
 
+int yyerror(char* error) {
+	fprintf(stderr, "%s at line %d", error, yylineno);
+}

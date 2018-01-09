@@ -21,6 +21,7 @@ value:
 	| value '%' value { $$ = getMod($1, $3); }
 	| '-' value %prec NEG { $$ = getNeg($2); }
 	| '[' value ']' { $$ = getDrf($2); }
+	| '{' WORD '}' { $$ = getDlb($2); }
 	| '(' value ')' { $$ = $2; }
 	;
 
@@ -35,10 +36,6 @@ cmd: ';'
 %%
 int yywrap() {
 	return 1;
-}
-
-int yyerror(char* error) {
-	fprintf(stderr, "%s", error);
 }
 
 #if YYDEBUG

@@ -14,7 +14,7 @@ void mov(int p1, int p2) {
 }
 
 void jmp(int p1, int _) {
-	*stk_at(0) = stk_where(p1);
+	*stk_at(0) = stk_eval(p1);
 }
 
 static proc_node base_procs[] = {

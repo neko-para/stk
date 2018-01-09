@@ -22,6 +22,7 @@ int getDiv(int p1, int p2);
 int getMod(int p1, int p2);
 int getNeg(int p1);
 int getDrf(int p1);
+int getDlb(int p1);
 
 void Label(int l);
 void Inst(int is);

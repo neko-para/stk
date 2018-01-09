@@ -15,7 +15,8 @@ struct Act {
 		DIV,
 		MOD,
 		NEG,
-		DRF
+		DRF,
+		DLB
 	} act;
 	int x1, x2;
 };
@@ -81,7 +82,7 @@ int* at(int x) {
 }
 
 static const char* actstr[] = {
-	"Imm", "Add", "Sub", "Mul", "Neg", "Drf"
+	"Imm", "Add", "Sub", "Mul", "Neg", "Drf", "Dlb"
 };
 
 int eval(int x) {
@@ -104,6 +105,8 @@ int eval(int x) {
 		return -eval(is.x1);
 	case Act::DRF:
 		return *at(eval(is.x1));
+	case Act::DLB:
+		return where(is.x1);
 	}
 }
 
@@ -181,6 +184,14 @@ int getNeg(int p1) {
 int getDrf(int p1) {
 	acttbl[rescnt] = (Act){
 		Act::DRF,
+		p1, 0
+	};
+	return rescnt++;
+}
+
+int getDlb(int p1) {
+	acttbl[rescnt] = (Act){
+		Act::DLB,
 		p1, 0
 	};
 	return rescnt++;
