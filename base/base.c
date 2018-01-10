@@ -40,10 +40,12 @@ void ret(stkhdl p1, stkhdl _) {
 	}
 }
 
-static stkhdl diff;
+static long diff;
 
 void cmp(stkhdl p1, stkhdl p2) {
-	diff = stk_eval(p1) - stk_eval(p2);
+	stkval a = stk_eval(p1);
+	stkval b = stk_eval(p2);
+	diff = ((a < b) ? -1 : (a > b));
 }
 
 void je(stkhdl p1, stkhdl _) {
@@ -82,6 +84,12 @@ void jle(stkhdl p1, stkhdl _) {
 	}
 }
 
+void loop(stkhdl p1, stkhdl _) {
+	if ((*stk_at(-1))--) {
+		jmp(p1, 0);
+	}
+}
+
 void Exit(stkhdl p1, stkhdl _) {
 	exit(stk_eval(p1));
 }
@@ -104,6 +112,7 @@ static proc_node base_procs[] = {
 	_PROC_(jge),
 	_PROC_(jl),
 	_PROC_(jle),
+	_PROC_(loop),
 	{
 		"exit", Exit
 	}

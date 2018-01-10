@@ -2,6 +2,7 @@
 #include "stk.h"
 #define YYSTYPE stkhdl
 #include <stdio.h>
+#include <time.h>
 #define YYDEBUG 0
 int yylex();
 int yyerror(char* err);
@@ -68,5 +69,6 @@ int main(int argc, char* argv[]) {
 	yydebug = 1;
 #endif
 	yyparse();
+	printf("Parse time: %.2lf\n", (double)clock() / CLOCKS_PER_SEC);
 	run();
 }

@@ -5,11 +5,17 @@ using io;
 call {start};
 jmp {end};
 start:
-	push 10;
-	call {fact};
-	outs "The fact of 10 is ";
-	out [1];
-	outs "\n";
+	push 0; @ sum
+	push 1; @ x
+	push 1000000; @ loop 1000000 times
+aaa:
+	base.mov -3, ([-2] + [-3]) % 1000000007; @ sum = (sum + x) % 1000000007
+	base.mov -2, [-2] + 1; @ ++x;
+	base.loop {aaa};
+	out [-3];
+	pop;
+	pop;
+	pop;
 	ret;
 end:
 exit 0;
