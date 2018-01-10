@@ -4,43 +4,38 @@
 #include <dlfcn.h>
 using namespace std;
 
-int rescnt;
+int rescnt = 1;
 
 struct Act {
 	enum {
-		IMM,
-		ADD,
-		SUB,
-		MUL,
-		DIV,
-		MOD,
-		NEG,
-		DRF,
-		DLB
+		IMM, ADD, SUB, MUL, DIV, MOD, NEG, DRF, DLB
 	} act;
 	int x1, x2;
 };
 
 struct Cmd {
-	int cmd;
+	int lib, cmd;
 	int p1, p2;
 };
 
 typedef void (*stkProc)(int p1, int p2);
 
 vector<int> stk;
-unordered_map<int, stkProc> proctbl;
+unordered_map<int, unordered_map<int, stkProc>> proctbl;
 unordered_map<string, int> stridx;
 unordered_map<int, string> strtbl;
 unordered_map<int, Act> acttbl;
 unordered_map<int, int> lbltbl;
 unordered_map<int, void*> loaded;
 vector<Cmd> cmd;
+vector<int> use;
 
 #ifdef WIN32
 #define SYMPRF "_"
+#define LIBSUF ".dll"
 #else
 #define SYMPRF ""
+#define LIBSUF ".so"
 #endif
 
 void* procs[] = {
@@ -53,16 +48,22 @@ void Load(int p1, int) {
 	} else {
 		unsigned cnt;
 		const char* name;
-		loaded[p1] = dlopen(strtbl[p1].c_str(), RTLD_LAZY);
+		loaded[p1] = dlopen((strtbl[p1] + LIBSUF).c_str(), RTLD_LAZY);
 		const proc_node* node = ((stkInitProc)dlsym(loaded[p1], SYMPRF "__stk_init"))(procs, &cnt, &name);
 		for (unsigned i = 0; i < cnt; ++i) {
-			proctbl[getWord((string(name) + "." + node[i].name).c_str())] = node[i].proc;
+			proctbl[getWord(name)][getWord(node[i].name)] = node[i].proc;
 		}
 	}
 }
 
+void Using(int p1, int) {
+	use.push_back(p1);
+}
+
 void init() {
-	proctbl[getWord("load")] = Load;
+	proctbl[getWord("__global__")][getWord("load")] = Load;
+	proctbl[getWord("__global__")][getWord("using")] = Using;
+	use.push_back(getWord("__global__"));
 }
 
 void push(int v) {
@@ -201,22 +202,31 @@ void Label(int l) {
 	lbltbl[l] = cmd.size() - 1;
 }
 
-void Inst(int is) {
+void Inst(int lb, int is) {
 	cmd.push_back((Cmd){
-		is, 0, 0
+		lb, is, 0, 0
 	});
 }
 
-void Inst1(int is, int p1) {
+void Inst1(int lb, int is, int p1) {
 	cmd.push_back((Cmd){
-		is, p1, 0
+		lb, is, p1, 0
 	});
 }
 
-void Inst2(int is, int p1, int p2) {
+void Inst2(int lb, int is, int p1, int p2) {
 	cmd.push_back((Cmd){
-		is, p1, p2
+		lb, is, p1, p2
 	});
+}
+
+stkProc getProc(int cmd) {
+	for (auto i : use) {
+		if (proctbl[i].find(cmd) != proctbl[i].end()) {
+			return proctbl[i][cmd];
+		}
+	}
+	return 0;
 }
 
 void run() {
@@ -224,8 +234,11 @@ void run() {
 	stk.push_back(0); // EAX
 	while (stk[0] != cmd.size()) {
 		const Cmd& c = cmd[stk[0]];
-		cerr << stk[0] << endl;
-		proctbl[c.cmd](c.p1, c.p2);
+		if (c.lib) {
+			proctbl[c.lib][c.cmd](c.p1, c.p2);
+		} else {
+			getProc(c.cmd)(c.p1, c.p2);
+		}
 		++stk[0];
 	}
 }

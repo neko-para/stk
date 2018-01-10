@@ -23,11 +23,12 @@ int getMod(int p1, int p2);
 int getNeg(int p1);
 int getDrf(int p1);
 int getDlb(int p1);
+const char* nextFile();
 
 void Label(int l);
-void Inst(int is);
-void Inst1(int is, int p1);
-void Inst2(int is, int p1, int p2);
+void Inst(int lb, int is);
+void Inst1(int lb, int is, int p1);
+void Inst2(int lb, int is, int p1, int p2);
 
 void run();
 

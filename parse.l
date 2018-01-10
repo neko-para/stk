@@ -4,7 +4,7 @@
 #include <stdlib.h>
 %}
 %%
-[a-zA-Z_][a-zA-Z0-9_.]* {
+[a-zA-Z_][a-zA-Z0-9_]* {
 	yylval = getWord(yytext);
 	return WORD;
 }
@@ -12,7 +12,7 @@
 	yylval = getImm(atoi(yytext));
 	return VALUE;	
 }
-[-+*/%\[\]\(\)\{\}:;,] {
+[-+*/%\[\]\(\)\{\}:;,.] {
 	return *yytext;
 }
 [ \t\n\r]* ;

@@ -1,16 +1,18 @@
-load base.so;
-load io.so;
-base.call {start};
-base.jmp {end};
+load base;
+load io;
+using base;
+using io;
+call {start};
+jmp {end};
 add:
-	base.mov 1, [-2] + [-3];
-	base.ret;
+	mov 1, [-2] + [-3];
+	ret;
 start:
-	base.push 5;
-	base.push 3;
-	base.call {add};
-	base.pop;
-	base.pop;
-	io.out [1];
-	base.ret;
+	push 5;
+	push 3;
+	call {add};
+	pop;
+	pop;
+	out [1];
+	ret;
 end:
