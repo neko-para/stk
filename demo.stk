@@ -1,18 +1,25 @@
-load base;
-load io;
+load "base.so";
+load "io.so";
 using base;
 using io;
 call {start};
 jmp {end};
-add:
-	mov 1, [-2] + [-3];
-	ret;
+fact:
+	cmp [-2], 1;
+	jle {fact_end};
+	push [-2] - 1;
+	call {fact};
+	mov 1, [1] * [-2];
+	ret 1;
+fact_end:
+	mov 1, 1;
+	ret 1;
+
 start:
-	push 5;
-	push 3;
-	call {add};
-	pop;
-	pop;
+	push 10;
+	call {fact};
+	outs "The fact of 10 is ";
 	out [1];
+	outs "\n";
 	ret;
 end:

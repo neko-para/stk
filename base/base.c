@@ -5,7 +5,10 @@ void push(int p1, int _) {
 	stk_push(stk_eval(p1));
 }
 
-void pop(int _, int __) {
+void pop(int p1, int _) {
+	if (p1) {
+		*stk_at(stk_eval(p1)) = *stk_at(stk_size() - 1);
+	}
 	stk_pop();
 }
 
@@ -23,26 +26,79 @@ void call(int p1, int _) {
 	*stk_at(0) = p;
 }
 
-void ret(int _, int __) {
+void ret(int p1, int _) {
+	int n = 0;
 	int p = *stk_at(stk_size() - 1);
+	if (p1) {
+		n = stk_eval(p1);
+	}
 	stk_pop();
 	*stk_at(0) = p;
+	while (n--) {
+		stk_pop();
+	}
 }
 
-static proc_node base_procs[] = {
-	{
-		"push", push
-	}, {
-		"pop", pop
-	}, {
-		"mov", mov
-	}, {
-		"jmp", jmp
-	}, {
-		"call", call
-	}, {
-		"ret", ret
+static int diff;
+
+void cmp(int p1, int p2) {
+	diff = stk_eval(p1) - stk_eval(p2);
+}
+
+void je(int p1, int _) {
+	if (diff == 0) {
+		jmp(p1, 0);
 	}
+}
+
+void jne(int p1, int _) {
+	if (diff) {
+		jmp(p1, 0);
+	}
+}
+
+void jg(int p1, int _) {
+	if (diff > 0) {
+		jmp(p1, 0);
+	}
+}
+
+void jge(int p1, int _) {
+	if (diff >= 0) {
+		jmp(p1, 0);
+	}
+}
+
+void jl(int p1, int _) {
+	if (diff < 0) {
+		jmp(p1, 0);
+	}
+}
+
+void jle(int p1, int _) {
+	if (diff <= 0) {
+		jmp(p1, 0);
+	}
+}
+
+#define _PROC_(p) { \
+	#p, p \
+	}
+
+static proc_node base_procs[] = {
+	_PROC_(push),
+	_PROC_(pop),
+	_PROC_(mov),
+	_PROC_(jmp),
+	_PROC_(call),
+	_PROC_(ret),
+	_PROC_(cmp),
+	_PROC_(je),
+	_PROC_(jne),
+	_PROC_(jg),
+	_PROC_(jge),
+	_PROC_(jl),
+	_PROC_(jle)
 };
 
 const proc_node* stk_init(unsigned* cnt, const char** name) {

@@ -12,8 +12,10 @@ int size();
 int* at(int x);
 int eval(int x);
 int where(int s);
+const char* tostr(int s);
 
 int getWord(const char* str);
+int parseWord(const char* str);
 int getImm(int num);
 int getAdd(int p1, int p2);
 int getSub(int p1, int p2);

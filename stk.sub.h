@@ -1,7 +1,7 @@
 #ifndef _STK_SUB_H_
 #define _STK_SUB_H_
 
-#define STK_TOOL_CNT 6
+#define STK_TOOL_CNT 7
 
 typedef void (*stkPushProc)(int v);
 typedef void (*stkPopProc)();
@@ -9,6 +9,7 @@ typedef int (*stkSizeProc)();
 typedef int* (*stkAtProc)(int x);
 typedef int (*stkEvalProc)(int x);
 typedef int (*stkWhereProc)(int s);
+typedef const char* (*stkToStrProc)(int s);
 typedef void (*stkProc)(int p1, int p2);
 
 #ifdef __cplusplus
@@ -23,6 +24,7 @@ extern void* stk_procs[STK_TOOL_CNT];
 #define stk_at ((stkAtProc)stk_procs[3])
 #define stk_eval ((stkEvalProc)stk_procs[4])
 #define stk_where ((stkWhereProc)stk_procs[5])
+#define stk_tostr ((stkToStrProc)stk_procs[6])
 
 typedef struct {
 	const char* name;

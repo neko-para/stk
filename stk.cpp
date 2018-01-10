@@ -39,7 +39,7 @@ vector<int> use;
 #endif
 
 void* procs[] = {
-	(void*)push, (void*)pop, (void*)size, (void*)at, (void*)eval, (void*)where
+	(void*)push, (void*)pop, (void*)size, (void*)at, (void*)eval, (void*)where, (void*)tostr
 };
 
 void Load(int p1, int) {
@@ -48,7 +48,7 @@ void Load(int p1, int) {
 	} else {
 		unsigned cnt;
 		const char* name;
-		loaded[p1] = dlopen((strtbl[p1] + LIBSUF).c_str(), RTLD_LAZY);
+		loaded[p1] = dlopen(strtbl[p1].c_str(), RTLD_LAZY);
 		const proc_node* node = ((stkInitProc)dlsym(loaded[p1], SYMPRF "__stk_init"))(procs, &cnt, &name);
 		for (unsigned i = 0; i < cnt; ++i) {
 			proctbl[getWord(name)][getWord(node[i].name)] = node[i].proc;
@@ -115,6 +115,10 @@ int where(int s) {
 	return lbltbl[s];
 }
 
+const char* tostr(int s) {
+	return strtbl[s].c_str();
+}
+
 int getWord(const char* str) {
 	auto it = stridx.find(str);
 	if (it != stridx.end()) {
@@ -124,6 +128,87 @@ int getWord(const char* str) {
 		stridx[str] = rescnt;
 		return rescnt++;
 	}
+}
+
+inline bool isodigit(char c) {
+	return unsigned(c - '0') < 8;
+}
+
+inline int parsex(char c) {
+	return isdigit(c) ? (c ^ '0') : (toupper(c) - 'A' + 10);
+}
+
+int parseWord(const char* str) {
+	string s = str + 1;
+	s.pop_back();
+	string r;
+	const char* beg = s.c_str();
+	const char* end = beg + s.length();
+	for (auto i = beg; i != end; ++i) {
+		if (*i == '\\') {
+			++i;
+			switch(*i) {
+				case '\n':
+					break;
+				case '"':
+				case '\\':
+					r.push_back(*i);
+					break;
+				case 'a':
+					r.push_back('\a');
+					break;
+				case 'b':
+					r.push_back('\b');
+					break;
+				case 'e':
+					r.push_back('\033');
+					break;
+				case 'f':
+					r.push_back('\f');
+					break;
+				case 'n':
+					r.push_back('\n');
+					break;
+				case 'r':
+					r.push_back('\r');
+					break;
+				case 't':
+					r.push_back('\t');
+					break;
+				case 'v':
+					r.push_back('\v');
+					break;
+				case 'x': {
+					if (isxdigit(i[2])) {
+						r.push_back((parsex(i[1]) << 4) | parsex(i[2]));
+						++i;
+					} else {
+						r.push_back(parsex(i[1]));
+					}
+					++i;
+					break;
+				}
+				default: {
+					if (isodigit(i[2])) {
+						if (isodigit(i[3])) {
+							r.push_back(((i[1] ^ '0') * 10 + (i[2] ^ '0')) * 10 + (i[3] ^ '0'));
+							++i;
+						} else {
+							r.push_back((i[1] ^ '0') * 10 + (i[2] ^ '0'));
+						}
+						++i;
+					} else {
+						r.push_back(i[1] ^ '0');
+					}
+					++i;
+					break;
+				}
+			}
+		} else {
+			r.push_back(*i);
+		}
+	}
+	return getWord(r.c_str());
 }
 
 int getImm(int num) {
