@@ -14,10 +14,16 @@
 }
 [0-9]+ {
 	yylval = getImm(atoi(yytext));
-	return VALUE;	
+	return VALUE;
 }
-[-+*/%\[\]\(\)\{\}:;,.#] {
+[-+*/%\[\]\(\)\{\}:;,.&|^~#] {
 	return *yytext;
+}
+"<<" {
+	return SHL;
+}
+">>" {
+	return SHR;
 }
 [ \t\n\r]* ;
 %%

@@ -4,43 +4,126 @@
 #include <dlfcn.h>
 using namespace std;
 
-int rescnt = 1;
-
-struct Act {
-	enum {
-		IMM, ADD, SUB, MUL, DIV, MOD, NEG, DRF, DLB
-	} act;
-	int x1, x2;
+enum class ExprId : unsigned char {
+	IMM,
+	ADD, SUB, MUL, DIV, MOD, NEG,
+	AND, OR, XOR, SHL, SHR, NOT,
+	DRF, DLB
 };
+
+struct ExprBase {
+	virtual ~ExprBase() {}
+	virtual long Eval() const = 0;
+	virtual ExprId Id() const = 0;
+};
+
+vector<shared_ptr<ExprBase>> exprs;
+
+struct UnaryExprBase : public ExprBase {
+	long exp;
+	UnaryExprBase(long e) : exp(e) {}
+};
+
+struct BinaryExprBase : public ExprBase {
+	long exp1, exp2;
+	BinaryExprBase(long e1, long e2) : exp1(e1), exp2(e2) {}
+};
+
+struct ExprImm : public UnaryExprBase {
+	using UnaryExprBase::UnaryExprBase;
+	virtual long Eval() const override final {
+		return exp;
+	}
+	virtual ExprId Id() const override final {
+		return ExprId::IMM;
+	}
+};
+
+struct ExprNeg : public UnaryExprBase {
+	using UnaryExprBase::UnaryExprBase;
+	virtual long Eval() const override final {
+		return -exprs[exp]->Eval();
+	}
+	virtual ExprId Id() const override final {
+		return ExprId::NEG;
+	}
+};
+
+struct ExprNot : public UnaryExprBase {
+	using UnaryExprBase::UnaryExprBase;
+	virtual long Eval() const override final {
+		return ~exprs[exp]->Eval();
+	}
+	virtual ExprId Id() const override final {
+		return ExprId::NOT;
+	}
+};
+
+struct ExprDrf : public UnaryExprBase {
+	using UnaryExprBase::UnaryExprBase;
+	virtual long Eval() const override final {
+		return *at(exprs[exp]->Eval());
+	}
+	virtual ExprId Id() const override final {
+		return ExprId::DRF;
+	}
+};
+
+struct ExprDlb : public UnaryExprBase {
+	using UnaryExprBase::UnaryExprBase;
+	virtual long Eval() const override final {
+		return where(exp);
+	}
+	virtual ExprId Id() const override final {
+		return ExprId::DLB;
+	}
+};
+
+#define BinaryExpr(name, op, id) \
+	struct Expr##name : public BinaryExprBase { \
+		using BinaryExprBase::BinaryExprBase; \
+		virtual long Eval() const override final { \
+			return exprs[exp1]->Eval() op exprs[exp2]->Eval(); \
+		} \
+		virtual ExprId Id() const override final { \
+			return ExprId::id; \
+		} \
+	};
+
+BinaryExpr(Add, +, ADD)
+BinaryExpr(Sub, -, SUB)
+BinaryExpr(Mul, *, MUL)
+BinaryExpr(Div, /, DIV)
+BinaryExpr(Mod, %, MOD)
+BinaryExpr(And, &, AND)
+BinaryExpr(Or, |, OR)
+BinaryExpr(Xor, ^, XOR)
+BinaryExpr(Shl, <<, SHL)
+BinaryExpr(Shr, >>, SHR)
 
 struct Cmd {
-	int lib, cmd;
-	int p1, p2;
+	long lib, cmd;
+	long p1, p2;
 };
 
-typedef void (*stkProc)(int p1, int p2);
+typedef void (*stkProc)(long p1, long p2);
 
-vector<int> stk;
-unordered_map<int, unordered_map<int, stkProc>> proctbl;
-unordered_map<string, int> stridx;
-unordered_map<int, string> strtbl;
-unordered_map<int, Act> acttbl;
-unordered_map<int, int> lbltbl;
-unordered_map<int, void*> loaded;
+vector<long> stk;
+unordered_map<long, unordered_map<long, stkProc>> proctbl;
+unordered_map<string, long> stridx;
+vector<string> strtbl;
+unordered_map<long, long> lbltbl;
+unordered_map<long, void*> loaded;
 vector<Cmd> cmd;
-vector<int> use;
+vector<long> use;
 vector<FILE*> files;
 
 ostream& operator<<(ostream& os, const Cmd& c) {
 	os << strtbl[c.lib] << '.' << strtbl[c.cmd];
 	if (c.p1) {
-		if (strtbl.find(c.p1) == strtbl.end()) {
-			os << ' ' << eval(c.p1);
-			if (c.p2) {
-				os << ' ' << eval(c.p2);
-			}
-		} else {
-			os << ' ' << strtbl[c.p1];
+		os << ' ' << eval(c.p1);
+		if (c.p2) {
+			os << ' ' << eval(c.p2);
 		}
 	}
 	return os;
@@ -58,7 +141,7 @@ void* procs[] = {
 	(void*)push, (void*)pop, (void*)size, (void*)at, (void*)eval, (void*)where, (void*)tostr
 };
 
-void Load(int p1, int) {
+void Load(long p1, long) {
 	if (loaded.find(p1) != loaded.end()) {
 		return;
 	} else {
@@ -72,7 +155,7 @@ void Load(int p1, int) {
 	}
 }
 
-void Using(int p1, int) {
+void Using(long p1, long) {
 	use.push_back(p1);
 }
 
@@ -80,9 +163,12 @@ void init() {
 	proctbl[getWord("__global__")][getWord("load")] = Load;
 	proctbl[getWord("__global__")][getWord("using")] = Using;
 	use.push_back(getWord("__global__"));
+	exprs.emplace_back(new ExprImm(0));
+	strtbl.emplace_back("");
+	stridx[""] = 0;
 }
 
-void push(int v) {
+void push(long v) {
 	stk.push_back(v);
 }
 
@@ -90,11 +176,11 @@ void pop() {
 	stk.pop_back();
 }
 
-int size() {
+long size() {
 	return stk.size();
 }
 
-int* at(int x) {
+long* at(long x) {
 	return &stk[x < 0 ? x + stk.size() : x];
 }
 
@@ -102,36 +188,15 @@ static const char* actstr[] = {
 	"Imm", "Add", "Sub", "Mul", "Neg", "Drf", "Dlb"
 };
 
-int eval(int x) {
-	const Act& is = acttbl[x];
-	//cerr << "do " << actstr[is.act] << " with " << is.x1 << ' ' << is.x2 << endl;
-	switch(is.act) {
-	case Act::IMM:
-		return is.x1;
-	case Act::ADD:
-		return eval(is.x1) + eval(is.x2);
-	case Act::SUB:
-		return eval(is.x1) - eval(is.x2);
-	case Act::MUL:
-		return eval(is.x1) * eval(is.x2);
-	case Act::DIV:
-		return eval(is.x1) / eval(is.x2);
-	case Act::MOD:
-		return eval(is.x1) % eval(is.x2);
-	case Act::NEG:
-		return -eval(is.x1);
-	case Act::DRF:
-		return *at(eval(is.x1));
-	case Act::DLB:
-		return where(is.x1);
-	}
+long eval(long x) {
+	return exprs[x]->Eval();
 }
 
-int where(int s) {
+long where(long s) {
 	return lbltbl[s];
 }
 
-const char* tostr(int s) {
+const char* tostr(long s) {
 	return strtbl[s].c_str();
 }
 
@@ -139,7 +204,7 @@ void pushFile(FILE* file) {
 	files.push_back(file);
 }
 
-int popFile(FILE** file) {
+long popFile(FILE** file) {
 	if (files.size()) {
 		*file = files.back();
 		files.pop_back();
@@ -149,14 +214,13 @@ int popFile(FILE** file) {
 	}
 }
 
-int getWord(const char* str) {
+long getWord(const char* str) {
 	auto it = stridx.find(str);
 	if (it != stridx.end()) {
 		return it->second;
 	} else {
-		strtbl[rescnt] = str;
-		stridx[str] = rescnt;
-		return rescnt++;
+		strtbl.push_back(str);
+		return stridx[str] = strtbl.size() - 1;
 	}
 }
 
@@ -164,11 +228,11 @@ inline bool isodigit(char c) {
 	return unsigned(c - '0') < 8;
 }
 
-inline int parsex(char c) {
+inline long parsex(char c) {
 	return isdigit(c) ? (c ^ '0') : (toupper(c) - 'A' + 10);
 }
 
-int parseWord(const char* str) {
+long parseWord(const char* str) {
 	string s = str + 1;
 	s.pop_back();
 	string r;
@@ -241,101 +305,57 @@ int parseWord(const char* str) {
 	return getWord(r.c_str());
 }
 
-int getImm(int num) {
-	acttbl[rescnt] = (Act){
-		Act::IMM,
-		num, 0
-	};
-	return rescnt++;
-}
+#define UnaryGet(name) \
+	long get##name(long p) { \
+		exprs.emplace_back(new Expr##name(p)); \
+		return exprs.size() - 1; \
+	}
 
-int getAdd(int p1, int p2) {
-	acttbl[rescnt] = (Act){
-		Act::ADD,
-		p1, p2
-	};
-	return rescnt++;
-}
+#define BinaryGet(name) \
+	long get##name(long p1, long p2) { \
+		exprs.emplace_back(new Expr##name(p1, p2)); \
+		return exprs.size() - 1; \
+	}
 
-int getSub(int p1, int p2) {
-	acttbl[rescnt] = (Act){
-		Act::SUB,
-		p1, p2
-	};
-	return rescnt++;
-}
+UnaryGet(Imm)
+BinaryGet(Add)
+BinaryGet(Sub)
+BinaryGet(Mul)
+BinaryGet(Div)
+BinaryGet(Mod)
+UnaryGet(Neg)
+BinaryGet(And)
+BinaryGet(Or)
+BinaryGet(Xor)
+BinaryGet(Shl)
+BinaryGet(Shr)
+UnaryGet(Not)
+UnaryGet(Drf)
+UnaryGet(Dlb)
 
-int getMul(int p1, int p2) {
-	acttbl[rescnt] = (Act){
-		Act::MUL,
-		p1, p2
-	};
-	return rescnt++;
-}
-
-int getDiv(int p1, int p2) {
-	acttbl[rescnt] = (Act){
-		Act::DIV,
-		p1, p2
-	};
-	return rescnt++;
-}
-
-int getMod(int p1, int p2) {
-	acttbl[rescnt] = (Act){
-		Act::MOD,
-		p1, p2
-	};
-	return rescnt++;
-}
-
-int getNeg(int p1) {
-	acttbl[rescnt] = (Act){
-		Act::NEG,
-		p1, 0
-	};
-	return rescnt++;
-}
-
-int getDrf(int p1) {
-	acttbl[rescnt] = (Act){
-		Act::DRF,
-		p1, 0
-	};
-	return rescnt++;
-}
-
-int getDlb(int p1) {
-	acttbl[rescnt] = (Act){
-		Act::DLB,
-		p1, 0
-	};
-	return rescnt++;
-}
-
-void Label(int l) {
+void Label(long l) {
 	lbltbl[l] = cmd.size() - 1;
 }
 
-void Inst(int lb, int is) {
+void Inst(long lb, long is) {
 	cmd.push_back((Cmd){
 		lb, is, 0, 0
 	});
 }
 
-void Inst1(int lb, int is, int p1) {
+void Inst1(long lb, long is, long p1) {
 	cmd.push_back((Cmd){
 		lb, is, p1, 0
 	});
 }
 
-void Inst2(int lb, int is, int p1, int p2) {
+void Inst2(long lb, long is, long p1, long p2) {
 	cmd.push_back((Cmd){
 		lb, is, p1, p2
 	});
 }
 
-stkProc getProc(int cmd) {
+stkProc getProc(long cmd) {
 	for (auto i : use) {
 		if (proctbl[i].find(cmd) != proctbl[i].end()) {
 			return proctbl[i][cmd];

@@ -3,14 +3,14 @@
 
 #define STK_TOOL_CNT 7
 
-typedef void (*stkPushProc)(int v);
+typedef void (*stkPushProc)(long v);
 typedef void (*stkPopProc)();
-typedef int (*stkSizeProc)();
-typedef int* (*stkAtProc)(int x);
-typedef int (*stkEvalProc)(int x);
-typedef int (*stkWhereProc)(int s);
-typedef const char* (*stkToStrProc)(int s);
-typedef void (*stkProc)(int p1, int p2);
+typedef long (*stkSizeProc)();
+typedef long* (*stkAtProc)(long x);
+typedef long (*stkEvalProc)(long x);
+typedef long (*stkWhereProc)(long s);
+typedef const char* (*stkToStrProc)(long s);
+typedef void (*stkProc)(long p1, long p2);
 
 #ifdef __cplusplus
 extern "C" {

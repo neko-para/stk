@@ -6,10 +6,14 @@ int yylex();
 int yyerror(char* err);
 extern FILE* yyin;
 %}
-%token WORD VALUE
+%token WORD VALUE SHL SHR
+%left '|'
+%left '^'
+%left '&'
+%left SHL SHR
 %left '+' '-'
 %left '*' '/' '%'
-%left NEG
+%right POS NEG NOT
 %%
 cmds:
 	| cmds cmd
@@ -23,7 +27,12 @@ value:
 	| value '*' value { $$ = getMul($1, $3); }
 	| value '/' value { $$ = getDiv($1, $3); }
 	| value '%' value { $$ = getMod($1, $3); }
+	| value '&' value { $$ = getAnd($1, $3); }
+	| value '|' value { $$ = getOr($1, $3); }
+	| value '^' value { $$ = getXor($1, $3); }
+	| '+' value %prec NEG { $$ = $2; }
 	| '-' value %prec NEG { $$ = getNeg($2); }
+	| '~' value %prec NOT { $$ = getNot($2); }
 	| '[' value ']' { $$ = getDrf($2); }
 	| '{' value '}' { $$ = getDlb($2); }
 	| '(' value ')' { $$ = $2; }

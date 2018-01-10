@@ -1,17 +1,17 @@
 #include "../stk.sub.h"
 #include <stdio.h>
 
-void out(int p1, int _) {
+void out(long p1, long _) {
 	printf("%d", stk_eval(p1));
 }
 
-void in(int _, int __) {
-	int d;
+void in(long _, long __) {
+	long d;
 	scanf("%d", &d);
 	stk_push(d);
 }
 
-void outs(int p1, int _) {
+void outs(long p1, long _) {
 	printf("%s", stk_tostr(p1));
 }
 
