@@ -102,13 +102,23 @@ BinaryExpr(Shl, <<, SHL)
 BinaryExpr(Shr, >>, SHR)
 
 struct Cmd {
-	unsigned prm : 2;
-	stkhdl lib : 30;
+	unsigned char flag;
+#ifdef __x86_64__
+	stkhdl lib : 56;
+#else
+	stkhdl lib : 24;
+#endif
 	stkhdl cmd;
 	stkhdl p1, p2;
-	Cmd(stkhdl l, stkhdl c) : prm(0), lib(l), cmd(c), p1(0), p2(0) {}
-	Cmd(stkhdl l, stkhdl c, stkhdl p) : prm(1), lib(l), cmd(c), p1(p), p2(0) {}
-	Cmd(stkhdl l, stkhdl c, stkhdl p, stkhdl q) : prm(2), lib(l), cmd(c), p1(p), p2(q) {}
+	Cmd(stkhdl l, stkhdl c) : flag(0), lib(l), cmd(c), p1(0), p2(0) {}
+	Cmd(stkhdl l, stkhdl c, stkhdl p) : flag(1), lib(l), cmd(c), p1(p), p2(0) {}
+	Cmd(stkhdl l, stkhdl c, stkhdl p, stkhdl q) : flag(2), lib(l), cmd(c), p1(p), p2(q) {}
+	void write(ostream& os) const {
+		os.write((const char*)this, 4 * sizeof(stkhdl));
+	}
+	void read(istream& os) {
+		os.read((char*)this, 4 * sizeof(stkhdl));
+	}
 };
 
 typedef void (*stkProc)(stkhdl p1, stkhdl p2);
