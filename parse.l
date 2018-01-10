@@ -1,5 +1,6 @@
 %{
 #include "stk.h"
+#define YYSTYPE stkhdl
 #include "yacc.h"
 #include <stdlib.h>
 %}

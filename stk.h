@@ -3,44 +3,46 @@
 
 #include <stdio.h>
 
+#include "stk.sub.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void init();
-void push(long v);
+void push(stkval v);
 void pop();
-long size();
-long* at(long x);
-long eval(long x);
-long where(long s);
-const char* tostr(long s);
+stkval size();
+stkval* at(stkval x);
+stkval eval(stkhdl x);
+stkval where(stkhdl s);
+const char* tostr(stkhdl s);
 
 void pushFile(FILE* file);
-long popFile(FILE** file);
-long getWord(const char* str);
-long parseWord(const char* str);
-long getImm(long num);
-long getAdd(long p1, long p2);
-long getSub(long p1, long p2);
-long getMul(long p1, long p2);
-long getDiv(long p1, long p2);
-long getMod(long p1, long p2);
-long getNeg(long p1);
-long getAnd(long p1, long p2);
-long getOr(long p1, long p2);
-long getXor(long p1, long p2);
-long getShl(long p1, long p2);
-long getShr(long p1, long p2);
-long getNot(long p1);
-long getDrf(long p1);
-long getDlb(long p1);
+int popFile(FILE** file);
+stkhdl getWord(const char* str);
+stkhdl parseWord(const char* str);
+stkhdl getImm(stkval num);
+stkhdl getAdd(stkhdl p1, stkhdl p2);
+stkhdl getSub(stkhdl p1, stkhdl p2);
+stkhdl getMul(stkhdl p1, stkhdl p2);
+stkhdl getDiv(stkhdl p1, stkhdl p2);
+stkhdl getMod(stkhdl p1, stkhdl p2);
+stkhdl getNeg(stkhdl p1);
+stkhdl getAnd(stkhdl p1, stkhdl p2);
+stkhdl getOr(stkhdl p1, stkhdl p2);
+stkhdl getXor(stkhdl p1, stkhdl p2);
+stkhdl getShl(stkhdl p1, stkhdl p2);
+stkhdl getShr(stkhdl p1, stkhdl p2);
+stkhdl getNot(stkhdl p1);
+stkhdl getDrf(stkhdl p1);
+stkhdl getDlb(stkhdl p1);
 const char* nextFile();
 
-void Label(long l);
-void Inst(long lb, long is);
-void Inst1(long lb, long is, long p1);
-void Inst2(long lb, long is, long p1, long p2);
+void Label(stkhdl l);
+void Inst(stkhdl lb, stkhdl is);
+void Inst1(stkhdl lb, stkhdl is, stkhdl p1);
+void Inst2(stkhdl lb, stkhdl is, stkhdl p1, stkhdl p2);
 
 void run();
 

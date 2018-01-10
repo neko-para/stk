@@ -1,5 +1,6 @@
 %{
 #include "stk.h"
+#define YYSTYPE stkhdl
 #include <stdio.h>
 #define YYDEBUG 0
 int yylex();

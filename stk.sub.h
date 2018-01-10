@@ -1,16 +1,19 @@
 #ifndef _STK_SUB_H_
 #define _STK_SUB_H_
 
+typedef unsigned long stkhdl;
+typedef long stkval;
+
 #define STK_TOOL_CNT 7
 
-typedef void (*stkPushProc)(long v);
+typedef void (*stkPushProc)(stkval v);
 typedef void (*stkPopProc)();
-typedef long (*stkSizeProc)();
-typedef long* (*stkAtProc)(long x);
-typedef long (*stkEvalProc)(long x);
-typedef long (*stkWhereProc)(long s);
-typedef const char* (*stkToStrProc)(long s);
-typedef void (*stkProc)(long p1, long p2);
+typedef stkval (*stkSizeProc)();
+typedef stkval* (*stkAtProc)(stkval x);
+typedef stkval (*stkEvalProc)(stkhdl x);
+typedef stkval (*stkWhereProc)(stkhdl s);
+typedef const char* (*stkToStrProc)(stkhdl s);
+typedef void (*stkProc)(stkhdl p1, stkhdl p2);
 
 #ifdef __cplusplus
 extern "C" {

@@ -2,34 +2,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void push(long p1, long _) {
+void push(stkhdl p1, stkhdl _) {
 	stk_push(stk_eval(p1));
 }
 
-void pop(long p1, long _) {
+void pop(stkhdl p1, stkhdl _) {
 	if (p1) {
 		*stk_at(stk_eval(p1)) = *stk_at(stk_size() - 1);
 	}
 	stk_pop();
 }
 
-void mov(long p1, long p2) {
+void mov(stkhdl p1, stkhdl p2) {
 	*stk_at(stk_eval(p1)) = stk_eval(p2);
 }
 
-void jmp(long p1, long _) {
+void jmp(stkhdl p1, stkhdl _) {
 	*stk_at(0) = stk_eval(p1);
 }
 
-void call(long p1, long _) {
-	long p = stk_eval(p1);
+void call(stkhdl p1, stkhdl _) {
+	stkhdl p = stk_eval(p1);
 	stk_push(*stk_at(0));
 	*stk_at(0) = p;
 }
 
-void ret(long p1, long _) {
-	long n = 0;
-	long p = *stk_at(stk_size() - 1);
+void ret(stkhdl p1, stkhdl _) {
+	stkhdl n = 0;
+	stkhdl p = *stk_at(stk_size() - 1);
 	if (p1) {
 		n = stk_eval(p1);
 	}
@@ -40,49 +40,49 @@ void ret(long p1, long _) {
 	}
 }
 
-static long diff;
+static stkhdl diff;
 
-void cmp(long p1, long p2) {
+void cmp(stkhdl p1, stkhdl p2) {
 	diff = stk_eval(p1) - stk_eval(p2);
 }
 
-void je(long p1, long _) {
+void je(stkhdl p1, stkhdl _) {
 	if (diff == 0) {
 		jmp(p1, 0);
 	}
 }
 
-void jne(long p1, long _) {
+void jne(stkhdl p1, stkhdl _) {
 	if (diff) {
 		jmp(p1, 0);
 	}
 }
 
-void jg(long p1, long _) {
+void jg(stkhdl p1, stkhdl _) {
 	if (diff > 0) {
 		jmp(p1, 0);
 	}
 }
 
-void jge(long p1, long _) {
+void jge(stkhdl p1, stkhdl _) {
 	if (diff >= 0) {
 		jmp(p1, 0);
 	}
 }
 
-void jl(long p1, long _) {
+void jl(stkhdl p1, stkhdl _) {
 	if (diff < 0) {
 		jmp(p1, 0);
 	}
 }
 
-void jle(long p1, long _) {
+void jle(stkhdl p1, stkhdl _) {
 	if (diff <= 0) {
 		jmp(p1, 0);
 	}
 }
 
-void Exit(long p1, long _) {
+void Exit(stkhdl p1, stkhdl _) {
 	exit(stk_eval(p1));
 }
 

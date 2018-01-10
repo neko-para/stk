@@ -13,25 +13,25 @@ enum class ExprId : unsigned char {
 
 struct ExprBase {
 	virtual ~ExprBase() {}
-	virtual long Eval() const = 0;
+	virtual stkval Eval() const = 0;
 	virtual ExprId Id() const = 0;
 };
 
 vector<shared_ptr<ExprBase>> exprs;
 
 struct UnaryExprBase : public ExprBase {
-	long exp;
-	UnaryExprBase(long e) : exp(e) {}
+	stkhdl exp;
+	UnaryExprBase(stkhdl e) : exp(e) {}
 };
 
 struct BinaryExprBase : public ExprBase {
-	long exp1, exp2;
-	BinaryExprBase(long e1, long e2) : exp1(e1), exp2(e2) {}
+	stkhdl exp1, exp2;
+	BinaryExprBase(stkhdl e1, stkhdl e2) : exp1(e1), exp2(e2) {}
 };
 
 struct ExprImm : public UnaryExprBase {
 	using UnaryExprBase::UnaryExprBase;
-	virtual long Eval() const override final {
+	virtual stkval Eval() const override final {
 		return exp;
 	}
 	virtual ExprId Id() const override final {
@@ -41,7 +41,7 @@ struct ExprImm : public UnaryExprBase {
 
 struct ExprNeg : public UnaryExprBase {
 	using UnaryExprBase::UnaryExprBase;
-	virtual long Eval() const override final {
+	virtual stkval Eval() const override final {
 		return -exprs[exp]->Eval();
 	}
 	virtual ExprId Id() const override final {
@@ -51,7 +51,7 @@ struct ExprNeg : public UnaryExprBase {
 
 struct ExprNot : public UnaryExprBase {
 	using UnaryExprBase::UnaryExprBase;
-	virtual long Eval() const override final {
+	virtual stkval Eval() const override final {
 		return ~exprs[exp]->Eval();
 	}
 	virtual ExprId Id() const override final {
@@ -61,7 +61,7 @@ struct ExprNot : public UnaryExprBase {
 
 struct ExprDrf : public UnaryExprBase {
 	using UnaryExprBase::UnaryExprBase;
-	virtual long Eval() const override final {
+	virtual stkval Eval() const override final {
 		return *at(exprs[exp]->Eval());
 	}
 	virtual ExprId Id() const override final {
@@ -71,7 +71,7 @@ struct ExprDrf : public UnaryExprBase {
 
 struct ExprDlb : public UnaryExprBase {
 	using UnaryExprBase::UnaryExprBase;
-	virtual long Eval() const override final {
+	virtual stkval Eval() const override final {
 		return where(exp);
 	}
 	virtual ExprId Id() const override final {
@@ -82,7 +82,7 @@ struct ExprDlb : public UnaryExprBase {
 #define BinaryExpr(name, op, id) \
 	struct Expr##name : public BinaryExprBase { \
 		using BinaryExprBase::BinaryExprBase; \
-		virtual long Eval() const override final { \
+		virtual stkval Eval() const override final { \
 			return exprs[exp1]->Eval() op exprs[exp2]->Eval(); \
 		} \
 		virtual ExprId Id() const override final { \
@@ -102,20 +102,25 @@ BinaryExpr(Shl, <<, SHL)
 BinaryExpr(Shr, >>, SHR)
 
 struct Cmd {
-	long lib, cmd;
-	long p1, p2;
+	unsigned prm : 2;
+	stkhdl lib : 30;
+	stkhdl cmd;
+	stkhdl p1, p2;
+	Cmd(stkhdl l, stkhdl c) : prm(0), lib(l), cmd(c), p1(0), p2(0) {}
+	Cmd(stkhdl l, stkhdl c, stkhdl p) : prm(1), lib(l), cmd(c), p1(p), p2(0) {}
+	Cmd(stkhdl l, stkhdl c, stkhdl p, stkhdl q) : prm(2), lib(l), cmd(c), p1(p), p2(q) {}
 };
 
-typedef void (*stkProc)(long p1, long p2);
+typedef void (*stkProc)(stkhdl p1, stkhdl p2);
 
-vector<long> stk;
-unordered_map<long, unordered_map<long, stkProc>> proctbl;
-unordered_map<string, long> stridx;
+vector<stkval> stk;
+unordered_map<stkhdl, unordered_map<stkhdl, stkProc>> proctbl;
+unordered_map<string, stkhdl> stridx;
 vector<string> strtbl;
-unordered_map<long, long> lbltbl;
-unordered_map<long, void*> loaded;
+unordered_map<stkhdl, stkhdl> lbltbl;
+unordered_map<stkhdl, void*> loaded;
 vector<Cmd> cmd;
-vector<long> use;
+vector<stkhdl> use;
 vector<FILE*> files;
 
 ostream& operator<<(ostream& os, const Cmd& c) {
@@ -141,7 +146,7 @@ void* procs[] = {
 	(void*)push, (void*)pop, (void*)size, (void*)at, (void*)eval, (void*)where, (void*)tostr
 };
 
-void Load(long p1, long) {
+void Load(stkhdl p1, stkhdl) {
 	if (loaded.find(p1) != loaded.end()) {
 		return;
 	} else {
@@ -155,20 +160,20 @@ void Load(long p1, long) {
 	}
 }
 
-void Using(long p1, long) {
+void Using(stkhdl p1, stkhdl) {
 	use.push_back(p1);
 }
 
 void init() {
-	proctbl[getWord("__global__")][getWord("load")] = Load;
-	proctbl[getWord("__global__")][getWord("using")] = Using;
-	use.push_back(getWord("__global__"));
 	exprs.emplace_back(new ExprImm(0));
 	strtbl.emplace_back("");
 	stridx[""] = 0;
+	proctbl[getWord("__global__")][getWord("load")] = Load;
+	proctbl[getWord("__global__")][getWord("using")] = Using;
+	use.push_back(getWord("__global__"));
 }
 
-void push(long v) {
+void push(stkval v) {
 	stk.push_back(v);
 }
 
@@ -176,11 +181,11 @@ void pop() {
 	stk.pop_back();
 }
 
-long size() {
+stkval size() {
 	return stk.size();
 }
 
-long* at(long x) {
+stkval* at(stkval x) {
 	return &stk[x < 0 ? x + stk.size() : x];
 }
 
@@ -188,15 +193,15 @@ static const char* actstr[] = {
 	"Imm", "Add", "Sub", "Mul", "Neg", "Drf", "Dlb"
 };
 
-long eval(long x) {
+stkval eval(stkhdl x) {
 	return exprs[x]->Eval();
 }
 
-long where(long s) {
+stkval where(stkhdl s) {
 	return lbltbl[s];
 }
 
-const char* tostr(long s) {
+const char* tostr(stkhdl s) {
 	return strtbl[s].c_str();
 }
 
@@ -204,7 +209,7 @@ void pushFile(FILE* file) {
 	files.push_back(file);
 }
 
-long popFile(FILE** file) {
+int popFile(FILE** file) {
 	if (files.size()) {
 		*file = files.back();
 		files.pop_back();
@@ -214,7 +219,7 @@ long popFile(FILE** file) {
 	}
 }
 
-long getWord(const char* str) {
+stkhdl getWord(const char* str) {
 	auto it = stridx.find(str);
 	if (it != stridx.end()) {
 		return it->second;
@@ -228,11 +233,11 @@ inline bool isodigit(char c) {
 	return unsigned(c - '0') < 8;
 }
 
-inline long parsex(char c) {
+inline stkhdl parsex(char c) {
 	return isdigit(c) ? (c ^ '0') : (toupper(c) - 'A' + 10);
 }
 
-long parseWord(const char* str) {
+stkhdl parseWord(const char* str) {
 	string s = str + 1;
 	s.pop_back();
 	string r;
@@ -305,19 +310,23 @@ long parseWord(const char* str) {
 	return getWord(r.c_str());
 }
 
+stkhdl getImm(stkval p) {
+	exprs.emplace_back(new ExprImm(p));
+	return exprs.size() - 1;
+}
+
 #define UnaryGet(name) \
-	long get##name(long p) { \
+	stkhdl get##name(stkhdl p) { \
 		exprs.emplace_back(new Expr##name(p)); \
 		return exprs.size() - 1; \
 	}
 
 #define BinaryGet(name) \
-	long get##name(long p1, long p2) { \
+	stkhdl get##name(stkhdl p1, stkhdl p2) { \
 		exprs.emplace_back(new Expr##name(p1, p2)); \
 		return exprs.size() - 1; \
 	}
 
-UnaryGet(Imm)
 BinaryGet(Add)
 BinaryGet(Sub)
 BinaryGet(Mul)
@@ -333,29 +342,23 @@ UnaryGet(Not)
 UnaryGet(Drf)
 UnaryGet(Dlb)
 
-void Label(long l) {
+void Label(stkhdl l) {
 	lbltbl[l] = cmd.size() - 1;
 }
 
-void Inst(long lb, long is) {
-	cmd.push_back((Cmd){
-		lb, is, 0, 0
-	});
+void Inst(stkhdl lb, stkhdl is) {
+	cmd.emplace_back(lb, is);
 }
 
-void Inst1(long lb, long is, long p1) {
-	cmd.push_back((Cmd){
-		lb, is, p1, 0
-	});
+void Inst1(stkhdl lb, stkhdl is, stkhdl p1) {
+	cmd.emplace_back(lb, is, p1);
 }
 
-void Inst2(long lb, long is, long p1, long p2) {
-	cmd.push_back((Cmd){
-		lb, is, p1, p2
-	});
+void Inst2(stkhdl lb, stkhdl is, stkhdl p1, stkhdl p2) {
+	cmd.emplace_back(lb, is, p1, p2);
 }
 
-stkProc getProc(long cmd) {
+stkProc getProc(stkhdl cmd) {
 	for (auto i : use) {
 		if (proctbl[i].find(cmd) != proctbl[i].end()) {
 			return proctbl[i][cmd];
