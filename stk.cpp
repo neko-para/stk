@@ -117,7 +117,7 @@ vector<stkval> stk;
 unordered_map<stkhdl, unordered_map<stkhdl, stkProc>> proctbl;
 unordered_map<string, stkhdl> stridx;
 vector<string> strtbl;
-unordered_map<stkhdl, stkhdl> lbltbl;
+unordered_map<stkhdl, stkval> lbltbl;
 unordered_map<stkhdl, void*> loaded;
 vector<Cmd> cmd;
 vector<stkhdl> use;
@@ -371,7 +371,7 @@ void run() {
 	stk.push_back(0); // EIP
 	stk.push_back(0); // EAX
 	while (stk[0] != cmd.size()) {
-		cerr << cmd[stk[0]] << endl;
+		// cerr << cmd[stk[0]] << endl;
 		const Cmd& c = cmd[stk[0]];
 		if (c.lib) {
 			proctbl[c.lib][c.cmd](c.p1, c.p2);
