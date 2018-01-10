@@ -1,0 +1,10 @@
+fact:
+	cmp [-2], 1;
+	jle {fact_end};
+	push [-2] - 1;
+	call {fact};
+	mov 1, [1] * [-2];
+	ret 1;
+fact_end:
+	mov 1, 1;
+	ret 1;

@@ -16,7 +16,7 @@
 	yylval = getImm(atoi(yytext));
 	return VALUE;	
 }
-[-+*/%\[\]\(\)\{\}:;,.] {
+[-+*/%\[\]\(\)\{\}:;,.#] {
 	return *yytext;
 }
 [ \t\n\r]* ;

@@ -4,17 +4,6 @@ using base;
 using io;
 call {start};
 jmp {end};
-fact:
-	cmp [-2], 1;
-	jle {fact_end};
-	push [-2] - 1;
-	call {fact};
-	mov 1, [1] * [-2];
-	ret 1;
-fact_end:
-	mov 1, 1;
-	ret 1;
-
 start:
 	push 10;
 	call {fact};
@@ -23,3 +12,5 @@ start:
 	outs "\n";
 	ret;
 end:
+exit 0;
+# "fact.stk";

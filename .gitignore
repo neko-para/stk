@@ -5,3 +5,4 @@ parse.exe
 parse
 lex.*
 yacc.*
+.vscode

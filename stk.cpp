@@ -29,6 +29,22 @@ unordered_map<int, int> lbltbl;
 unordered_map<int, void*> loaded;
 vector<Cmd> cmd;
 vector<int> use;
+vector<FILE*> files;
+
+ostream& operator<<(ostream& os, const Cmd& c) {
+	os << strtbl[c.lib] << '.' << strtbl[c.cmd];
+	if (c.p1) {
+		if (strtbl.find(c.p1) == strtbl.end()) {
+			os << ' ' << eval(c.p1);
+			if (c.p2) {
+				os << ' ' << eval(c.p2);
+			}
+		} else {
+			os << ' ' << strtbl[c.p1];
+		}
+	}
+	return os;
+}
 
 #ifdef WIN32
 #define SYMPRF "_"
@@ -117,6 +133,20 @@ int where(int s) {
 
 const char* tostr(int s) {
 	return strtbl[s].c_str();
+}
+
+void pushFile(FILE* file) {
+	files.push_back(file);
+}
+
+int popFile(FILE** file) {
+	if (files.size()) {
+		*file = files.back();
+		files.pop_back();
+		return 0;
+	} else {
+		return 1;
+	}
 }
 
 int getWord(const char* str) {
@@ -318,6 +348,7 @@ void run() {
 	stk.push_back(0); // EIP
 	stk.push_back(0); // EAX
 	while (stk[0] != cmd.size()) {
+		cerr << cmd[stk[0]] << endl;
 		const Cmd& c = cmd[stk[0]];
 		if (c.lib) {
 			proctbl[c.lib][c.cmd](c.p1, c.p2);

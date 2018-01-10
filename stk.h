@@ -1,6 +1,8 @@
 #ifndef _STK_H_
 #define _STK_H_
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,6 +16,8 @@ int eval(int x);
 int where(int s);
 const char* tostr(int s);
 
+void pushFile(FILE* file);
+int popFile(FILE** file);
 int getWord(const char* str);
 int parseWord(const char* str);
 int getImm(int num);

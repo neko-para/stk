@@ -1,5 +1,6 @@
 #include "../stk.sub.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 void push(int p1, int _) {
 	stk_push(stk_eval(p1));
@@ -81,6 +82,10 @@ void jle(int p1, int _) {
 	}
 }
 
+void Exit(int p1, int _) {
+	exit(stk_eval(p1));
+}
+
 #define _PROC_(p) { \
 	#p, p \
 	}
@@ -98,7 +103,10 @@ static proc_node base_procs[] = {
 	_PROC_(jg),
 	_PROC_(jge),
 	_PROC_(jl),
-	_PROC_(jle)
+	_PROC_(jle),
+	{
+		"exit", Exit
+	}
 };
 
 const proc_node* stk_init(unsigned* cnt, const char** name) {

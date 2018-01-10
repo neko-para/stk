@@ -4,6 +4,7 @@
 #define YYDEBUG 0
 int yylex();
 int yyerror(char* err);
+extern FILE* yyin;
 %}
 %token WORD VALUE
 %left '+' '-'
@@ -36,11 +37,14 @@ cmd: ';'
 	| WORD '.' WORD value ';' { Inst1($1, $3, $4); }
 	| WORD value ',' value { Inst2(0, $1, $2, $4); }
 	| WORD '.' WORD value ',' value { Inst2($1, $3, $4, $6); }
+	| '#' WORD ';' {
+		pushFile(fopen(tostr($2), "r"));
+	}
 	;
 
 %%
 int yywrap() {
-	return 1;
+	return popFile(&yyin);
 }
 
 #if YYDEBUG
